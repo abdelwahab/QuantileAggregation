@@ -10,7 +10,7 @@ from keras.engine import Input, Model
 from keras import regularizers,initializers
 from tensorflow.python.ops import array_ops, nn
 
-losses=['w_loss','c_loss'] #available losses
+losses=['w_loss','c_loss','g_loss'] #available losses
 chosen_loss=0#0 for the wasserstein loss, 1 for the N-pair cosine loss
 use_quantile=True #true to aggregate using quantile, false for global max aggregation
 classification=False #false for metric learning setting,true for a classification scenario
