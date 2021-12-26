@@ -13,20 +13,20 @@ def loss_gaussian():
     def distribution_distance(embeddings_positive, embeddings_anchor):
         embeddings_positive_m, embeddings_anchor_m, embeddings_positive_std, embeddings_anchor_std=features(embeddings_positive, embeddings_anchor)
         sigma_sq_fuse = K.relu(K.tf.transpose(embeddings_positive_std[None,:,:] + embeddings_anchor_std[:,None,:],(1,0,2)))
-        diffs = K.tf.transpose(embeddings_positive_m[None,:,:] - embeddings_anchor_m[:,None,:],(1,0,2))/(1e-10 + sigma_sq_fuse) + K.tf.log(1e-10 + sigma_sq_fuse)
-        return K.tf.reduce_sum(diffs, axis=2)
+        diffs = K.tf.pow(K.tf.transpose(embeddings_positive_m[None,:,:] - embeddings_anchor_m[:,None,:],(1,0,2)),2)/(1e-10 + sigma_sq_fuse) + K.tf.log(1e-10 + sigma_sq_fuse)
+        return -1*K.tf.reduce_sum(diffs, axis=2)
 
     def loss_split(yTrue, yPred):
-        return npairs_loss(K.tf.boolean_mask(yTrue, np.array([True, False] * 50)),
-                           K.tf.boolean_mask(yPred, np.array([True, False] * 50)),
-                           K.tf.boolean_mask(yPred, np.array([False, True] * 50))) 
+        return npairs_loss(K.tf.boolean_mask(yTrue, np.array([True, False] * int(batch_size/2))),
+                           K.tf.boolean_mask(yPred, np.array([True, False] * int(batch_size/2))),
+                           K.tf.boolean_mask(yPred, np.array([False, True] * int(batch_size/2)))) 
 
     def npairs_loss(labels, embeddings_anchor, embeddings_positive, reg_lambda=0.002):
         reg_anchor = math_ops.reduce_mean(math_ops.reduce_sum(math_ops.square(embeddings_anchor), 1))
         reg_positive = math_ops.reduce_mean(math_ops.reduce_sum(math_ops.square(embeddings_positive), 1))
         l2loss = math_ops.multiply(0.25 * reg_lambda, reg_anchor + reg_positive, name='l2loss')
-        embeddings_anchor = K.tf.reshape(embeddings_anchor, [50, 768, 128])
-        embeddings_positive = K.tf.reshape(embeddings_positive, [50, 768, 128])
+        embeddings_anchor = K.tf.reshape(embeddings_anchor, [int(batch_size/2), 768, 128])
+        embeddings_positive = K.tf.reshape(embeddings_positive, [int(batch_size/2), 768, 128])
         similarity_matrix = distribution_distance(embeddings_positive, embeddings_anchor)
         lshape = array_ops.shape(labels)
         labels = array_ops.reshape(labels, [lshape[0], 1])
